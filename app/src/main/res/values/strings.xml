@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">NanoTank</string>
+    <string name="time_date_title">Time and date settings</string>
+    <string name="light_title">Light settings</string>
+    <string name="status">LED status</string>
+</resources>
