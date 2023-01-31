@@ -1,5 +1,7 @@
 package com.example.nanotank;
 
+import static com.example.nanotank.App.CHANNEL_1_ID;
+
 import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.Notification;
@@ -7,7 +9,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -16,9 +17,6 @@ import androidx.core.app.NotificationManagerCompat;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-
-import static com.example.nanotank.App.CHANNEL_1_ID;
-import static com.example.nanotank.deviceAddress.NANOTANK;
 
 public class MyTestService extends IntentService {
     private final String TAG ="MyTestService";
@@ -32,7 +30,7 @@ public class MyTestService extends IntentService {
     public MyTestService() {
         super("MyTestService");
 
-        serviceHandler=new Handler(){
+  /*      serviceHandler=new Handler(){
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
@@ -49,7 +47,7 @@ public class MyTestService extends IntentService {
                     case 2: setServiceForNextDay(); break;
                 }
             }
-        };
+        }; */
 
     }
 
@@ -61,8 +59,8 @@ public class MyTestService extends IntentService {
 
         String message="";
         Log.i(TAG, "Try to connect to bluetooth device");
-        bluetoothConnection = new BluetoothConnection(NANOTANK.address);
-        bluetoothConnection.start();
+        //bluetoothConnection = new BluetoothConnection(NANOTANK.address);
+        //bluetoothConnection.start();
     }
 
     private void displayNotificationMessage(String message) {
@@ -83,7 +81,7 @@ public class MyTestService extends IntentService {
     }
 
     private void setServiceForNextDay(){
-        bluetoothConnection.cancel();
+        //bluetoothConnection.cancel();
         int currentHour = Calendar.getInstance().getTime().getHours();
         int currentMinutes = Calendar.getInstance().getTime().getMinutes();
         if (notified || currentHour > 22) {

@@ -1,5 +1,11 @@
 package com.example.nanotank;
 
+
+import static com.example.nanotank.MainActivity.CONNECTING_STATUS;
+import static com.example.nanotank.MainActivity.applicationOpen;
+import static com.example.nanotank.MainActivity.handler;
+import static com.example.nanotank.MyTestService.serviceHandler;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -11,11 +17,61 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.UUID;
 
-import static com.example.nanotank.MainActivity.CONNECTING_STATUS;
-import static com.example.nanotank.MainActivity.applicationOpen;
-import static com.example.nanotank.MainActivity.handler;
-import static com.example.nanotank.MyTestService.serviceHandler;
+/*
+class BluetoothConnection extends Thread {
+    private final BluetoothServerSocket mmServerSocket;
+    private final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+    public BluetoothConnection() {
+        // Use a temporary object that is later assigned to mmServerSocket
+        // because mmServerSocket is final.
+        BluetoothServerSocket tmp = null;
+        try {
+            // MY_UUID is the app's UUID string, also used by the client code.
+            tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, UUID.randomUUID());
+        } catch (IOException e) {
+            Log.e(TAG, "Socket's listen() method failed", e);
+        }
+        mmServerSocket = tmp;
+    }
+
+    public void run() {
+        BluetoothSocket socket = null;
+        // Keep listening until exception occurs or a socket is returned.
+        while (true) {
+            try {
+                socket = mmServerSocket.accept();
+            } catch (IOException e) {
+                Log.e(TAG, "Socket's accept() method failed", e);
+                break;
+            }
+
+            if (socket != null) {
+                // A connection was accepted. Perform work associated with
+                // the connection in a separate thread.
+                //manageMyConnectedSocket(socket);
+                try {
+                    mmServerSocket.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
+            }
+        }
+    }
+
+    // Closes the connect socket and causes the thread to finish.
+    public void cancel() {
+        try {
+            mmServerSocket.close();
+        } catch (IOException e) {
+            Log.e(TAG, "Could not close the connect socket", e);
+        }
+    }
+}
+
+/*
+*/
 public class BluetoothConnection extends Thread {
     private static final String TAG ="BluetoothConnection";
     private static BluetoothAdapter bluetoothAdapter;
@@ -29,7 +85,7 @@ public class BluetoothConnection extends Thread {
     public BluetoothConnection(String deviceAddress) {
         this.deviceAddress = deviceAddress;
         Log.d(TAG, "Trying to get bluetooth adapter");
-        this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         try {
             HashMap<String,Object> connectedDevice = connectedDevices.get(deviceAddress);
@@ -42,9 +98,10 @@ public class BluetoothConnection extends Thread {
         } catch (NullPointerException e) {
             connectedDevices = new HashMap<>(); //not exist
         }
-        this.bluetoothDevice = this.bluetoothAdapter.getRemoteDevice(deviceAddress);
 
-        UUID uuid = this.bluetoothDevice.getUuids()[0].getUuid();
+        this.bluetoothDevice = bluetoothAdapter.getRemoteDevice(deviceAddress);
+       // ParcelUuid[] uuid1 = this.bluetoothDevice.getUuids();
+        UUID uuid = UUID.randomUUID();//this.bluetoothDevice.getUuids()[0].getUuid();
         Log.d(TAG, "Bluetooth device uuid: "+uuid.toString());
         try {
             Log.d(TAG, "Trying to create socket");
@@ -65,7 +122,7 @@ public class BluetoothConnection extends Thread {
     }
     public void run() {
         // Cancel discovery because it otherwise slows down the connection.
-        this.bluetoothAdapter.cancelDiscovery();
+        bluetoothAdapter.cancelDiscovery();
         HashMap<String,Object> connectedDevice = connectedDevices.get(deviceAddress);
         if (connectedDevice != null){
             if (applicationOpen) {
@@ -109,8 +166,8 @@ public class BluetoothConnection extends Thread {
                         serviceHandler.obtainMessage(2).sendToTarget();
                     }
                 }
+                return;
             }
-            return;
         }
 
         // The connection attempt succeeded. Perform communication in a separate thread.
@@ -147,3 +204,60 @@ public class BluetoothConnection extends Thread {
         Log.d(TAG, connectedDevices.toString());
     }
 }
+
+
+/*
+public class BluetoothConnection extends AppCompatActivity {
+    public static final String EXTRA_MAC_ADDRESS = "extra_mac_address";
+    private String mMacAddress;
+    private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothGatt mBluetoothGatt;
+    private BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Log.i("BluetoothConnection", "Connected to GATT server.");
+                Log.i("BluetoothConnection", "Attempting to start service discovery:" +
+                        mBluetoothGatt.discoverServices());
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.i("BluetoothConnection", "Disconnected from GATT server.");
+            }
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.i("BluetoothConnection", "Service discovery completed.");
+            } else {
+                Log.i("BluetoothConnection", "Service discovery failed with status: " + status);
+            }
+        }
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mMacAddress = getIntent().getStringExtra(EXTRA_MAC_ADDRESS);
+        if (mMacAddress == null) {
+            Log.i("BluetoothConnection", "No MAC address specified.");
+            return;
+        }
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
+            Log.i("BluetoothConnection", "Bluetooth is not available or not enabled.");
+            return;
+        }
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mMacAddress);
+        mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mBluetoothGatt != null) {
+            mBluetoothGatt.close();
+            mBluetoothGatt = null;
+        }
+    }
+}
+ */

@@ -1,5 +1,7 @@
 package com.example.nanotank;
 
+import static com.example.nanotank.deviceAddress.NANOTANK;
+
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
@@ -31,8 +33,6 @@ import androidx.core.app.NotificationManagerCompat;
 
 import java.util.Calendar;
 import java.util.Locale;
-
-import static com.example.nanotank.deviceAddress.NANOTANK;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -541,8 +541,13 @@ public class MainActivity extends AppCompatActivity {
     public void startBluetoothConnection() {
         progressBar.setVisibility(View.VISIBLE);
         mDisplayBTStatus.setText("Starting connection");
-        bluetoothConnection = new BluetoothConnection(NANOTANK.address);
+        bluetoothConnection = new BluetoothConnection(NANOTANK.address); //
         bluetoothConnection.start();
+        /*
+        Intent intent = new Intent(this, BluetoothConnection.class);
+        intent.putExtra(BluetoothConnection.EXTRA_MAC_ADDRESS, deviceAddress.NANOTANK.address);
+        startActivity(intent);
+         */
     }
 
     @Override

@@ -9,4 +9,9 @@ public enum deviceAddress {
     private deviceAddress(String address) {
         this.address = address;
     }
+
+    @Override
+    public String toString() {
+        return this.address;
+    }
 }
