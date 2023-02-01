@@ -1,4 +1,10 @@
-package com.example.nanotank;
+package com.example.nanotank.bluetooth;
+
+import static com.example.nanotank.MainActivity.BLUETOOTH_MESSAGE;
+import static com.example.nanotank.MainActivity.CONNECTING_STATUS;
+import static com.example.nanotank.MainActivity.applicationOpen;
+import static com.example.nanotank.MainActivity.handler;
+import static com.example.nanotank.MyTestService.serviceHandler;
 
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
@@ -6,12 +12,6 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import static com.example.nanotank.MainActivity.BLUETOOTH_MESSAGE;
-import static com.example.nanotank.MainActivity.CONNECTING_STATUS;
-import static com.example.nanotank.MainActivity.applicationOpen;
-import static com.example.nanotank.MainActivity.handler;
-import static com.example.nanotank.MyTestService.serviceHandler;
 
 public class BluetoothCommunication extends Thread {
     private final String TAG ="BluetoothCommunication";
@@ -21,25 +21,19 @@ public class BluetoothCommunication extends Thread {
     private String message;
 
     public BluetoothCommunication(BluetoothSocket socket) {
-        mmSocket = socket;
-        // Get the input and output streams, using temp objects because member streams are final
-        try {
-            mmInStream = socket.getInputStream();
-            mmOutStream = socket.getOutputStream();
-        } catch (IOException e) {
-            Log.e(TAG,"unable to create streams");
-        }
-        if (applicationOpen) {
-            handler.obtainMessage(CONNECTING_STATUS, 1,1).sendToTarget();
-        } else {
-            serviceHandler.obtainMessage(0).sendToTarget();
-        }
+        this.mmSocket = socket;
     }
 
     public void run() {
+        if (!socketStreamsEstablished()) {
+            this.cancel();
+            return;
+        }
+
+        Log.d(TAG,String.format("Started to listen bluetooth socket %s",this.mmSocket.getRemoteDevice().getAddress()));
+
         byte[] buffer = new byte[1024];  // buffer store for the stream
         int bytes=0; // bytes returned from read()
-        Log.d(TAG,"started to listen");
 
         // Keep listening to the InputStream until an exception occurs
         while (true) {
@@ -62,8 +56,8 @@ public class BluetoothCommunication extends Thread {
                     bytes++;
                 }
             } catch (IOException e) {
-                Log.w(TAG,"stream listening exception");
-                e.printStackTrace();
+                Log.e(TAG,"stream listening exception", e);
+
                 if (applicationOpen) {
                     handler.obtainMessage(BLUETOOTH_MESSAGE,"stream listening").sendToTarget();
                 } else {
@@ -72,6 +66,23 @@ public class BluetoothCommunication extends Thread {
                 break;
             }
         }
+    }
+
+    private boolean socketStreamsEstablished() {
+        try {
+            this.mmInStream = this.mmSocket.getInputStream();
+            this.mmOutStream = this.mmSocket.getOutputStream();
+        } catch (IOException e) {
+            Log.e(TAG,"unable to create streams", e);
+            return false;
+        }
+        if (applicationOpen) {
+            handler.obtainMessage(CONNECTING_STATUS, 1,1).sendToTarget();
+        } else {
+            serviceHandler.obtainMessage(0).sendToTarget();
+        }
+
+        return true;
     }
 
     /* Call this from the main activity to send data to the remote device */

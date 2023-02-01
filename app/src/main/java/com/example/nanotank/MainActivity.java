@@ -31,6 +31,8 @@ import android.widget.TimePicker;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.example.nanotank.bluetooth.BluetoothConnection;
+
 import java.util.Calendar;
 import java.util.Locale;
 
@@ -109,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                                         break;
                                     case 1:
                                         mDisplayBTStatus.setText("Communication established");
-                                        bluetoothConnection.addToConnected();
+                                        //bluetoothConnection.addToConnected();
                                         bluetoothConnection.send("inputs");
                                 }
                                 break;
@@ -387,11 +389,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        checkBluetoothConnection();
+        startBluetoothConnection();
 
     }
 
-    private void layoutInitialization(){
+    private void layoutInitialization() {
         textDate = (TextView) findViewById(R.id.NanoTankDate);
         textDate.setText("Unknown");
         textTime = (TextView) findViewById(R.id.NanoTankTime);
@@ -482,27 +484,6 @@ public class MainActivity extends AppCompatActivity {
         progressBar.setVisibility(View.GONE);
     }
 
-    private void checkBluetoothConnection(){
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(mBluetoothAdapter == null){
-            mDisplayBTStatus.setText("Device has not bluetooth.");
-            imgBluetoothDisconnected.setVisibility(View.INVISIBLE);
-            imgBluetoothError.setVisibility(View.VISIBLE);
-
-        }
-        if(!mBluetoothAdapter.isEnabled()){
-            mDisplayBTStatus.setText("Enable Bluetooth.");
-            Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivity(enableBTIntent);
-        }
-        else{
-            mDisplayBTStatus.setText("Bluetooth on");
-            imgBluetoothDisconnected.setVisibility(View.INVISIBLE);
-            imgBluetoothConnected.setVisibility(View.VISIBLE);
-            startBluetoothConnection();
-        }
-    }
-
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -541,13 +522,8 @@ public class MainActivity extends AppCompatActivity {
     public void startBluetoothConnection() {
         progressBar.setVisibility(View.VISIBLE);
         mDisplayBTStatus.setText("Starting connection");
-        bluetoothConnection = new BluetoothConnection(NANOTANK.address); //
+        bluetoothConnection = new BluetoothConnection(NANOTANK.address, getApplicationContext()); //
         bluetoothConnection.start();
-        /*
-        Intent intent = new Intent(this, BluetoothConnection.class);
-        intent.putExtra(BluetoothConnection.EXTRA_MAC_ADDRESS, deviceAddress.NANOTANK.address);
-        startActivity(intent);
-         */
     }
 
     @Override
