@@ -18,6 +18,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
@@ -74,7 +75,13 @@ public class MainActivity extends AppCompatActivity {
         // Register for broadcasts on BluetoothAdapter state change
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(mReceiver, filter);
-        handler = getBluetoothHandler();
+
+        new Thread(new Runnable() {
+            public void run() {
+                handler = getBluetoothHandler();
+            }
+        }).start();
+
 
 
         timeButton.setOnClickListener(new View.OnClickListener() {
@@ -224,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("HandlerLeak")
     @NonNull
     private Handler getBluetoothHandler() {
-        return new Handler() {
+        return new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
