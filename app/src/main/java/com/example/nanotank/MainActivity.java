@@ -426,36 +426,30 @@ public class MainActivity extends AppCompatActivity {
         progressBar.setVisibility(View.GONE);
     }
 
+    private void BluetoothOff(String text) {
+        mDisplayBTStatus.setText(text);
+        imgBluetoothDisconnected.setVisibility(View.VISIBLE);
+        imgBluetoothConnected.setVisibility(View.INVISIBLE);
+    }
+
+    private void BluetoothOn(String text) {
+        mDisplayBTStatus.setText(text);
+        imgBluetoothDisconnected.setVisibility(View.INVISIBLE);
+        imgBluetoothConnected.setVisibility(View.VISIBLE);
+    }
+
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                // Get the Bluetooth adapter status
-                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR);
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+
                 switch (state) {
-                    case BluetoothAdapter.STATE_OFF:
-                        mDisplayBTStatus.setText("Bluetooth off");
-                        imgBluetoothDisconnected.setVisibility(View.VISIBLE);
-                        imgBluetoothConnected.setVisibility(View.INVISIBLE);
-                        break;
-                    case BluetoothAdapter.STATE_TURNING_OFF:
-                        mDisplayBTStatus.setText("Turning Bluetooth off...");
-                        imgBluetoothDisconnected.setVisibility(View.VISIBLE);
-                        imgBluetoothConnected.setVisibility(View.INVISIBLE);
-                        break;
-                    case BluetoothAdapter.STATE_ON:
-                        mDisplayBTStatus.setText("Bluetooth on");
-                        imgBluetoothDisconnected.setVisibility(View.INVISIBLE);
-                        imgBluetoothConnected.setVisibility(View.VISIBLE);
-                        startBluetoothConnection();
-                        break;
-                    case BluetoothAdapter.STATE_TURNING_ON:
-                        mDisplayBTStatus.setText("Turning Bluetooth on...");
-                        imgBluetoothDisconnected.setVisibility(View.INVISIBLE);
-                        imgBluetoothConnected.setVisibility(View.VISIBLE);
-                        break;
+                    case BluetoothAdapter.STATE_OFF: BluetoothOff("Bluetooth off"); break;
+                    case BluetoothAdapter.STATE_TURNING_OFF: BluetoothOff("Turning Bluetooth off..."); break;
+                    case BluetoothAdapter.STATE_ON: BluetoothOn("Bluetooth on"); startBluetoothConnection(); break;
+                    case BluetoothAdapter.STATE_TURNING_ON:  BluetoothOn("Turning Bluetooth on..."); break;
                 }
             }
         }
@@ -464,7 +458,7 @@ public class MainActivity extends AppCompatActivity {
     public void startBluetoothConnection() {
         progressBar.setVisibility(View.VISIBLE);
         mDisplayBTStatus.setText("Starting connection");
-        bluetoothConnection = new BluetoothConnection(NANOTANK.address, getApplicationContext()); //
+        bluetoothConnection = new BluetoothConnection(NANOTANK.address, getApplicationContext());
         bluetoothConnection.start();
     }
 
