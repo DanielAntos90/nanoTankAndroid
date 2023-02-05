@@ -1,4 +1,4 @@
-package com.example.nanotank;
+package com.example.nanotank.bluetooth;
 
 public enum deviceAddress {
     NANOTANK("98:D3:91:FD:60:CB"),

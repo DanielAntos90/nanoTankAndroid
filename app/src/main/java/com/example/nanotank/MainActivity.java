@@ -1,10 +1,12 @@
 package com.example.nanotank;
 
-import static com.example.nanotank.deviceAddress.NANOTANK;
+import static com.example.nanotank.bluetooth.deviceAddress.NANOTANK;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -26,8 +28,8 @@ import android.widget.NumberPicker;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.TimePicker;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -39,13 +41,13 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG ="MainActivity";
-    private TextView textDate, textTime,mDisplayBTStatus,ledBrightnessText,mLedOn,mLedOff,
+    protected TextView textDate, textTime,mDisplayBTStatus,ledBrightnessText,mLedOn,mLedOff,
             mLeDdimming;
     private Button dateButton,timeButton,timeLedOnButton,timeLedOffButton,updateTimeDateButton,
             dimmingButton, updateLedButton,scheduleButton,unscheduleButton;
     private DatePickerDialog.OnDateSetListener mDateSetListener;
     private TimePickerDialog.OnTimeSetListener mTimeSetListener;
-    private ImageView imgBluetoothConnected,imgBluetoothDisconnected,imgBluetoothError,
+    protected ImageView imgBluetoothConnected,imgBluetoothDisconnected,imgBluetoothError,
             imgLedOn,imgLedOff,imgLedUnknown;
     private int idTimeButton=0;
 
@@ -57,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
 
     public final static int CONNECTING_STATUS = 1; // used in bluetooth handler to identify message status
     public final static int BLUETOOTH_MESSAGE = 2; // used in bluetooth handler to identify message update
-    public final static int NOTIFICATION = 3; // used in bluetooth handler to identify message update
     public static boolean applicationOpen;
 
     private NotificationManagerCompat notificationManager;
@@ -73,190 +74,30 @@ public class MainActivity extends AppCompatActivity {
         // Register for broadcasts on BluetoothAdapter state change
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(mReceiver, filter);
-
-
-        handler=new Handler(){
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-                switch(msg.what){
-                    case CONNECTING_STATUS:
-                        switch(msg.arg1) {
-                            case 0:
-                                progressBar.setVisibility(View.GONE);
-                                imgBluetoothConnected.setVisibility(View.GONE);
-                                imgBluetoothDisconnected.setVisibility(View.GONE);
-                                imgBluetoothError.setVisibility(View.VISIBLE);
-                                switch (msg.arg2) {
-                                    case 0:
-                                        mDisplayBTStatus.setText("Cannot connect to device");
-                                        break;
-                                    case 1:
-                                        mDisplayBTStatus.setText("Could not close the client socket");
-                                        break;
-                                    case 2:
-                                        mDisplayBTStatus.setText("Socket's create() method failed");
-                                        break;
-
-                                }
-                                break;
-                            case 1:
-                                progressBar.setVisibility(View.GONE);
-                                imgBluetoothDisconnected.setVisibility(View.GONE);
-                                imgBluetoothError.setVisibility(View.GONE);
-                                imgBluetoothConnected.setVisibility(View.VISIBLE);
-                                switch (msg.arg2) {
-                                    case 0:
-                                        mDisplayBTStatus.setText("Connection established");
-                                        break;
-                                    case 1:
-                                        mDisplayBTStatus.setText("Communication established");
-                                        //bluetoothConnection.addToConnected();
-                                        bluetoothConnection.send("inputs");
-                                }
-                                break;
-                            case 2:
-                                progressBar.setVisibility(View.GONE);
-
-                                imgBluetoothError.setVisibility(View.GONE);
-                                imgBluetoothConnected.setVisibility(View.GONE);
-                                imgBluetoothDisconnected.setVisibility(View.VISIBLE);
-                                switch (msg.arg2) {
-                                    case 0:
-                                        mDisplayBTStatus.setText("Connection closed");
-                                        break;
-                                    case 1:
-                                        mDisplayBTStatus.setText("Could not close the client socket");
-                                        break;
-                                }
-                                break;
-                        }
-                        break;
-                    case BLUETOOTH_MESSAGE:{
-                        String arduinoMsg = msg.obj.toString(); // Read message from Arduino
-                        if (arduinoMsg.contains("ArduinoOutputs")){
-                            try{
-                            String[] arduinoMsgList = arduinoMsg.split(";");
-                            textTime.setText(arduinoMsgList[1]);
-                            textDate.setText(arduinoMsgList[2]);
-                            mLedOn.setText(arduinoMsgList[3]);
-                            mLedOff.setText(arduinoMsgList[4]);
-                            mLeDdimming.setText(arduinoMsgList[5]+" min.");
-                            ledBrightness.setProgress(Integer.parseInt(arduinoMsgList[6]));
-
-                            if (!updateTimeDateButton.isEnabled()){
-                                updateTimeDateButton.setEnabled(true);
-                                updateLedButton.setEnabled(true);
-                            }
-
-                            switch (arduinoMsgList[7]){
-                            case "led on":
-                                ledIsOn();
-                                mDisplayBTStatus.setText("Waiting for action");
-                                break;
-                            case "led off":
-                                ledIsOff();
-                                mDisplayBTStatus.setText("Waiting for action");
-                                break;}
-                            }catch (Exception exception){
-                                mDisplayBTStatus.setText("Unable to read data");
-                            }
-                        }else{switch (arduinoMsg.toLowerCase()){
-                            case "led on":
-                                ledIsOn();
-                                mDisplayBTStatus.setText("Waiting for action");
-                                break;
-                            case "led off":
-                                ledIsOff();
-                                mDisplayBTStatus.setText("Waiting for action");
-                                break;
-                            case "inputs":
-                                mDisplayBTStatus.setText("Request for Nanotank");
-                                progressBar.setVisibility(View.VISIBLE);
-                                break;
-                            case "message error":
-                                imgBluetoothConnected.setVisibility(View.GONE);
-                                imgBluetoothDisconnected.setVisibility(View.GONE);
-                                imgBluetoothError.setVisibility(View.VISIBLE);
-                                mDisplayBTStatus.setText("Unable to send message");
-                                break;
-                            case "stream listening":
-                                imgBluetoothConnected.setVisibility(View.GONE);
-                                imgBluetoothDisconnected.setVisibility(View.GONE);
-                                imgBluetoothError.setVisibility(View.VISIBLE);
-                                mDisplayBTStatus.setText("Stream listening error");
-                                break;
-                            case "time changed":
-                                mDisplayBTStatus.setText("Time changed");
-                                progressBar.setVisibility(View.GONE);
-                                break;
-                            case "light changed":
-                                mDisplayBTStatus.setText("Light changed");
-                                progressBar.setVisibility(View.GONE);
-                                break;
-                            }
-                            break;
-                        }
-                    }break;
-                }
-            }
-        };
+        handler = getBluetoothHandler();
 
 
         timeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Calendar cal = Calendar.getInstance();
-                int hour = cal.get(Calendar.HOUR_OF_DAY);
-                int minute = cal.get(Calendar.MINUTE);
-                idTimeButton=1;
-
-                TimePickerDialog dialog = new TimePickerDialog(MainActivity.this, android.R.style.Theme_Holo_Light_Dialog_NoActionBar,
-                        mTimeSetListener, hour, minute, true);
-                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                dialog.show();
+                DialogFragment newFragment = new TimePickerFragment(textTime);
+                newFragment.show(getFragmentManager(), "timePicker");
             }
         });
 
         timeLedOnButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Calendar cal = Calendar.getInstance();
-                int hour,minute=0;
-                try {
-                    hour = Integer.parseInt(mLedOn.toString().split(":")[0]);
-                    minute = Integer.parseInt(mLedOn.toString().split(":")[1]);
-                } catch ( IllegalArgumentException exception) {
-                    hour=10;
-                }
-
-                idTimeButton=2;
-
-                TimePickerDialog dialog = new TimePickerDialog(MainActivity.this, android.R.style.Theme_Holo_Light_Dialog_NoActionBar,
-                        mTimeSetListener, hour, minute, true);
-                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                dialog.show();
+                DialogFragment newFragment = new TimePickerFragment(mLedOn);
+                newFragment.show(getFragmentManager(), "timePickerLedOn");
             }
         });
 
         timeLedOffButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Calendar cal = Calendar.getInstance();
-                int hour,minute=0;
-                try {
-                    hour = Integer.parseInt(mLedOff .toString().split(":")[0]);
-                    minute = Integer.parseInt(mLedOff .toString().split(":")[1]);
-                } catch ( IllegalArgumentException exception) {
-                    hour=20;
-                }
-
-                idTimeButton=3;
-
-                TimePickerDialog dialog = new TimePickerDialog(MainActivity.this, android.R.style.Theme_Holo_Light_Dialog_NoActionBar,
-                        mTimeSetListener, hour, minute, true);
-                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                dialog.show();
+                DialogFragment newFragment = new TimePickerFragment(mLedOff);
+                newFragment.show(getFragmentManager(), "timePickerLedOff");
             }
         });
 
@@ -314,20 +155,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
-        mTimeSetListener = new TimePickerDialog.OnTimeSetListener() {
-            @Override
-            public void onTimeSet(TimePicker timePicker, int hour, int minute) {
-                Log.d(TAG, "onTimeSet: Time:" + hour + ":" + minute);
 
-                String timestr = String.format(Locale.GERMANY, "%d:%02d",hour, minute);
-                switch (idTimeButton){
-                    case 1: textTime.setText(timestr); break;
-                    case 2: mLedOn.setText(timestr); break;
-                    case 3: mLedOff.setText(timestr); break;
-                }
-                idTimeButton=0;
-            }
-        };
         mDateSetListener = new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker datePicker, int year, int month, int day) {
@@ -390,6 +218,113 @@ public class MainActivity extends AppCompatActivity {
         });
 
         startBluetoothConnection();
+
+    }
+
+    @SuppressLint("HandlerLeak")
+    @NonNull
+    private Handler getBluetoothHandler() {
+        return new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+                String message = "";
+                switch (msg.what) {
+                    case CONNECTING_STATUS:
+                        switch (msg.arg1) {
+                            case 0:
+                                setBluetoothError();
+
+                                switch (msg.arg2) {
+                                    case 0: message = "Cannot connect to device"; break;
+                                    case 1: message = "Could not close the client socket"; break;
+                                    case 2: message = "Socket's create() method failed"; break;
+                                    case 3: message = "Device has not bluetooth"; break;
+                                    case 4: message = "Connection closed"; break;
+                                }
+                                break;
+
+                            case 1:
+                                setBluetoothOk();
+
+                                switch (msg.arg2) {
+                                    case 0: message = "Connection established"; break;
+                                    case 1: message = "Communication established";
+                                            bluetoothConnection.send("inputs"); break;
+                                }
+                                break;
+
+                        }
+                        break;
+
+                    case BLUETOOTH_MESSAGE: {
+                        String arduinoMsg = msg.obj.toString();
+                        if (arduinoMsg.contains("ArduinoOutputs")) {
+                            try {
+                                String[] arduinoMsgList = arduinoMsg.split(";");
+                                textTime.setText(arduinoMsgList[1]);
+                                textDate.setText(arduinoMsgList[2]);
+                                mLedOn.setText(arduinoMsgList[3]);
+                                mLedOff.setText(arduinoMsgList[4]);
+                                mLeDdimming.setText(arduinoMsgList[5] + " min.");
+                                ledBrightness.setProgress(Integer.parseInt(arduinoMsgList[6]));
+
+                                if (!updateTimeDateButton.isEnabled()) {
+                                    updateTimeDateButton.setEnabled(true);
+                                    updateLedButton.setEnabled(true);
+                                }
+
+                                switch (arduinoMsgList[7]) {
+                                    case "led on": ledIsOn(); break;
+                                    case "led off": ledIsOff(); break;
+                                }
+                                message = "Waiting for action";
+                            } catch (Exception exception) {
+                                message = "Unable to obtain data";
+                            }
+                        } else {
+                            switch (arduinoMsg.toLowerCase()) {
+                                case "led on": ledIsOn(); message = "Waiting for action"; break;
+                                case "led off": ledIsOff(); message = "Waiting for action"; break;
+                                case "inputs": message = "Request for Nanotank";
+                                               progressBar.setVisibility(View.VISIBLE); break;
+                                case "message error":
+                                    setBluetoothError();
+                                    message ="Unable to send message";
+                                    break;
+                                case "stream listening":
+                                    setBluetoothError();
+                                    message ="Stream listening error";
+                                    break;
+                                case "time changed":
+                                    message ="Time changed";
+                                    progressBar.setVisibility(View.GONE);
+                                    break;
+                                case "light changed":
+                                    message ="Light changed";
+                                    progressBar.setVisibility(View.GONE);
+                                    break;
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+                mDisplayBTStatus.setText(message);
+            }
+        };
+    }
+    private void setBluetoothError() {
+        progressBar.setVisibility(View.GONE);
+        imgBluetoothConnected.setVisibility(View.GONE);
+        imgBluetoothDisconnected.setVisibility(View.GONE);
+        imgBluetoothError.setVisibility(View.VISIBLE);
+    }
+    private void setBluetoothOk(){
+        progressBar.setVisibility(View.GONE);
+        imgBluetoothError.setVisibility(View.GONE);
+        imgBluetoothConnected.setVisibility(View.GONE);
+        imgBluetoothDisconnected.setVisibility(View.VISIBLE);
 
     }
 

@@ -86,6 +86,7 @@ public class BluetoothConnection extends Thread {
                 return false;
             }
         }
+        handler.obtainMessage(CONNECTING_STATUS,1,0).sendToTarget();
         this.addToConnected();
 
         return true;
@@ -156,9 +157,7 @@ public class BluetoothConnection extends Thread {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null) {
             Log.d(TAG, "Bluetooth has not found.");
-//            mDisplayBTStatus.setText("Device has not bluetooth.");
-//            imgBluetoothDisconnected.setVisibility(View.INVISIBLE);
-//            imgBluetoothError.setVisibility(View.VISIBLE);
+            handler.obtainMessage(CONNECTING_STATUS, 0,3).sendToTarget();
             return false;
         }
         return true;
@@ -166,13 +165,10 @@ public class BluetoothConnection extends Thread {
 
     private void enableBluetooth() {
         if(bluetoothAdapter.isEnabled()) {
-//            mDisplayBTStatus.setText("Bluetooth on");
-//            imgBluetoothDisconnected.setVisibility(View.INVISIBLE);
-//            imgBluetoothConnected.setVisibility(View.VISIBLE);
+            Log.d(TAG,"Bluetooth is on");
             return;
         }
 
-        //mDisplayBTStatus.setText("Bluetooth is disabled.");
         Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         enableBTIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(enableBTIntent);
@@ -187,11 +183,11 @@ public class BluetoothConnection extends Thread {
         try {
             bluetoothCommunication.cancel();
             if (applicationOpen) {
-                handler.obtainMessage(CONNECTING_STATUS, 2, 0).sendToTarget();
+                handler.obtainMessage(CONNECTING_STATUS, 0, 4).sendToTarget();
             }
         } catch (Exception e) {
             if (applicationOpen) {
-                handler.obtainMessage(CONNECTING_STATUS, 2,1).sendToTarget();
+                handler.obtainMessage(CONNECTING_STATUS, 0,1).sendToTarget();
             }
         }
     }
