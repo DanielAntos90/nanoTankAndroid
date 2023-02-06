@@ -86,7 +86,10 @@ public class BluetoothConnection extends Thread {
                 return false;
             }
         }
-        handler.obtainMessage(CONNECTING_STATUS,1,0).sendToTarget();
+        if (applicationOpen) {
+            handler.obtainMessage(CONNECTING_STATUS,1,0).sendToTarget();
+        }
+
         this.addToConnected();
 
         return true;
@@ -142,7 +145,10 @@ public class BluetoothConnection extends Thread {
                 } else {
                     serviceHandler.obtainMessage(0).sendToTarget();
                 }
-                this.bluetoothCommunication.run();
+                if (!bluetoothCommunication.isAlive()) {
+                    this.bluetoothCommunication.run();
+                }
+
             } catch (NullPointerException e) {
                 e.printStackTrace();
                 return false;
@@ -157,7 +163,10 @@ public class BluetoothConnection extends Thread {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null) {
             Log.d(TAG, "Bluetooth has not found.");
-            handler.obtainMessage(CONNECTING_STATUS, 0,3).sendToTarget();
+            if (applicationOpen) {
+                handler.obtainMessage(CONNECTING_STATUS, 0,3).sendToTarget();
+            }
+
             return false;
         }
         return true;

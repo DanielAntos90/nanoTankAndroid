@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -27,7 +28,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationManagerCompat;
 
 import com.example.nanotank.bluetooth.BluetoothConnection;
 import com.example.nanotank.picker.DatePickerFragment;
@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     public final static int BLUETOOTH_MESSAGE = 2; // used in bluetooth handler to identify message update
     public static boolean applicationOpen;
 
-    private NotificationManagerCompat notificationManager;
+   // private NotificationManagerCompat notificationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -328,7 +328,7 @@ public class MainActivity extends AppCompatActivity {
         scheduleButton = (Button) findViewById(R.id.schedule);
         unscheduleButton = (Button) findViewById(R.id.unschedule);
 
-        notificationManager = NotificationManagerCompat.from(this);
+        //notificationManager = NotificationManagerCompat.from(this);
     }
 
     private void seekBarListenerInitialization()
@@ -431,13 +431,15 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(getApplicationContext(), MyAlarmReceiver.class);
         final PendingIntent pIntent = PendingIntent.getBroadcast(this, MyAlarmReceiver.REQUEST_CODE,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        long firstMillis = System.currentTimeMillis();
-        AlarmManager alarm = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+        //long firstMillis = System.currentTimeMillis();
+        AlarmManager alarmManager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
         // First parameter is the type: ELAPSED_REALTIME, ELAPSED_REALTIME_WAKEUP, RTC_WAKEUP
         // Interval can be INTERVAL_FIFTEEN_MINUTES, INTERVAL_HALF_HOUR, INTERVAL_HOUR, INTERVAL_DAY
-        alarm.setInexactRepeating(AlarmManager.RTC_WAKEUP, firstMillis,
-                AlarmManager.INTERVAL_FIFTEEN_MINUTES, pIntent);
-
+       // alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, firstMillis, AlarmManager.INTERVAL_FIFTEEN_MINUTES, pIntent);
+        alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime(),
+                1*60*1000,
+                pIntent);
         Log.d(TAG, "Job scheduled");
     }
 

@@ -12,6 +12,7 @@ public class MyAlarmReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Intent i = new Intent(context, MyTestService.class);
         i.putExtra("foo", "bar");
-        context.startService(i);
+        //context.startService(i);
+        context.startForegroundService(i);
     }
 }
