@@ -5,7 +5,6 @@ import static com.example.nanotank.bluetooth.deviceAddress.NANOTANK;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
-import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
@@ -22,7 +21,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.NumberPicker;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -32,6 +30,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.example.nanotank.bluetooth.BluetoothConnection;
+import com.example.nanotank.picker.DatePickerFragment;
+import com.example.nanotank.picker.DimmingPickerFragment;
+import com.example.nanotank.picker.TimePickerFragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -113,41 +114,9 @@ public class MainActivity extends AppCompatActivity {
         dimmingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final Dialog d = new Dialog(MainActivity.this);
-                d.setTitle("NumberPicker");
-                d.setContentView(R.layout.dialog);
-                Button b1 = (Button) d.findViewById(R.id.button1);
-                Button b2 = (Button) d.findViewById(R.id.button2);
-                final NumberPicker np = (NumberPicker) d.findViewById(R.id.numberPicker1);
-                np.setMaxValue(60); // max value 100
-                np.setMinValue(0);   // min value 0
-                np.setWrapSelectorWheel(false);
-                try {
-                    String text= mLeDdimming.getText().toString();
-                    np.setValue(Integer.parseInt(text.substring(0,text.length()-5))); // max value 100
-                } catch ( IllegalArgumentException exception) {
-                    np.setValue(30);
-                }
-
-                //np.setOnValueChangedListener(this);
-                b1.setOnClickListener(new View.OnClickListener()
-                {
-                    @Override
-                    public void onClick(View v) {
-                        mLeDdimming.setText(String.valueOf(np.getValue()+" min.")); //set the value to textview
-                        d.dismiss();
-                    }
-                });
-                b2.setOnClickListener(new View.OnClickListener()
-                {
-                    @Override
-                    public void onClick(View v) {
-                        d.dismiss(); // dismiss the dialog
-                    }
-                });
-                d.show();
+                DialogFragment newFragment = new DimmingPickerFragment(mLeDdimming);
+                newFragment.show(getFragmentManager(), "dimmingPicker");
             }
-
         });
         imgLedOn.setOnClickListener(new View.OnClickListener() {
             @Override
