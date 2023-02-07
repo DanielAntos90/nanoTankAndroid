@@ -107,7 +107,7 @@ public class BluetoothConnection extends Thread {
 
     private boolean createSocket() {
 
-        UUID uuid = UUID.randomUUID();
+        UUID uuid = UUID.nameUUIDFromBytes(deviceAddress.getBytes());//UUID.randomUUID();
 
         try {
             Log.d(TAG, String.format("Trying to create socket for uuid: %s", uuid.toString()));

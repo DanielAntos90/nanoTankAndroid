@@ -25,8 +25,6 @@ import java.util.Calendar;
 
 public class MyTestService extends IntentService {
     private static String TAG ="MyTestService";
-
-    private static int notificationCount = 1;
     private final int startTime = 18;
     @SuppressLint("HandlerLeak")
     public static Handler serviceHandler=new Handler(){
@@ -35,15 +33,14 @@ public class MyTestService extends IntentService {
             super.handleMessage(msg);
             switch(msg.what){
                 case 0:
-                    //bluetoothConnection.addToConnected();
                     bluetoothConnection.send("inputs");
                     break;
                 case 1: String arduinoMsg = msg.obj.toString(); // Read message from Arduino
-                    if (arduinoMsg.contains("ArduinoOutputs")){
+                    if (arduinoMsg.contains("ArduinoOutputs")) {
+                        bluetoothConnection.cancel();
                         String[] arduinoMsgList = arduinoMsg.split(";");
                         displayNotificationMessage(arduinoMsgList[0]);
                     }  break;
-                //case 2: setServiceForNextDay(); break;
             }
         }
     };
@@ -78,8 +75,10 @@ public class MyTestService extends IntentService {
             Thread.sleep(30000);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            bluetoothConnection.cancel();
         }
-        //displayNotificationMessage("test");
+
     }
 
     private static void displayNotificationMessage(String message) {
@@ -95,37 +94,22 @@ public class MyTestService extends IntentService {
                 .build();
         notificationManager.notify(1, notification);
         Log.i(TAG, "Notification send");
-      //  notified = true;
-        //setServiceForNextDay();
+        setServiceForNextDay();
     }
 
-    private void setServiceForNextDay(){
-        //bluetoothConnection.cancel();
-        int currentHour = Calendar.getInstance().getTime().getHours();
-        int currentMinutes = Calendar.getInstance().getTime().getMinutes();
-        if (notified || currentHour > 22) {
-            notified = false;
+    private static void setServiceForNextDay() {
+        Calendar timeCal = Calendar.getInstance();
 
-            Log.i(TAG, "Starting next day alarm");
-            alarm.cancel(pIntent);
-            Calendar timeCal = Calendar.getInstance();
-            timeCal.add(Calendar.DAY_OF_YEAR, 1);
-            timeCal.set(Calendar.HOUR_OF_DAY, startTime);
-            timeCal.set(Calendar.MINUTE, 0);
+        Log.i(TAG, "Starting next day alarm");
+        alarm.cancel(pIntent);
 
-            DateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
-            System.out.println(dateFormat.format(timeCal.getTime()));
+        timeCal.add(Calendar.DAY_OF_YEAR, 1);
+        timeCal.set(Calendar.HOUR_OF_DAY, 10);
+        timeCal.set(Calendar.MINUTE, 0);
 
-            alarm.set(AlarmManager.RTC_WAKEUP, timeCal.getTimeInMillis(), pIntent);
+        DateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+        System.out.println(dateFormat.format(timeCal.getTime()));
 
-        } else if (currentHour==startTime && currentMinutes<10){
-            Log.i(TAG, "Starting 15 minutes repeater");
-            alarm.cancel(pIntent);
-            long firstMillis = System.currentTimeMillis();
-            // First parameter is the type: ELAPSED_REALTIME, ELAPSED_REALTIME_WAKEUP, RTC_WAKEUP
-            // Interval can be INTERVAL_FIFTEEN_MINUTES, INTERVAL_HALF_HOUR, INTERVAL_HOUR, INTERVAL_DAY
-            alarm.setInexactRepeating(AlarmManager.RTC_WAKEUP, firstMillis,
-                    AlarmManager.INTERVAL_FIFTEEN_MINUTES, pIntent);
-        }
+        alarm.set(AlarmManager.RTC_WAKEUP, timeCal.getTimeInMillis(), pIntent);
     }
 }
